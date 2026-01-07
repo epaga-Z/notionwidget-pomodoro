@@ -13,19 +13,28 @@
       --strokeSoft: rgba(255,255,255,.62);
 
       --shadowText: 0 2px 16px rgba(0,0,0,.55);
+
+      /* タイマー上下の間隔（上も下も同じ） */
+      --gap: clamp(14px, 6vh, 64px);
     }
 
     *{box-sizing:border-box}
     html,body{height:100%}
+
     body{
       margin:0;
       color:var(--fg);
-      /* macOS/iOS向けに絞ったフォントスタック */
-      font-family: -apple-system, system-ui, "Hiragino Sans", "Noto Sans JP", sans-serif;
+
+      /* ③ Helveticaに統一（macOS/iOSならHelveticaが基本的に存在） */
+      font-family: Helvetica, "Helvetica Neue", Arial, sans-serif;
+
       display:flex;
       align-items:center;
       justify-content:center;
-      overflow:hidden;
+
+      /* ① 縦が短い時に見切れないようスクロール可能に */
+      overflow:auto;
+
       background:#111;
     }
 
@@ -36,6 +45,7 @@
       background-position:center;
       transform:scale(1.02);
       filter:saturate(1.05);
+      z-index:0;
     }
     .bg::after{
       content:"";
@@ -48,16 +58,22 @@
 
     .wrap{
       width: min(760px, 96vw);
-      height: min(640px, 92vh);
+
+      /* ① 以前の固定高さが見切れ原因になりやすいので撤廃 */
+      min-height: 100%;
       padding: clamp(14px, 2.2vw, 22px);
+
       position:relative;
       z-index:1;
+
       display:flex;
       align-items:center;
       justify-content:center;
+
+      /* iframe内で内容が溢れたらスクロール */
+      overflow:auto;
     }
 
-    /* Main UI */
     .ui{
       width: min(680px, 100%);
       display:flex;
@@ -126,29 +142,29 @@
       white-space: nowrap;
     }
 
-    /* Big timer - slightly thinner */
+    /* ② タイマーの上/下で同じ間隔を使う */
+    .gap{
+      height: var(--gap);
+      width:100%;
+    }
+
+    /* Timer */
     .time{
       text-align:center;
       font-variant-numeric: tabular-nums;
-      font-weight: 720; /* ← ③少し細く */
+
+      /* 少し細め */
+      font-weight: 720;
+
       letter-spacing: .02em;
       line-height: 1;
-      font-size: clamp(72px, 15vw, 148px);
-      margin-top: clamp(14px, 2.8vh, 24px);
-      margin-bottom: 0;
+
+      /* ① 縦が短い時に巨大化しすぎないよう、vh制限も入れる */
+      font-size: min(clamp(72px, 15vw, 148px), 42vh);
+
+      margin:0;
     }
 
-    /*
-      Spacer between timer and controls:
-      - "at least double" vs previous (was ~14-44px). Now 48-140px.
-      - grows with viewport height (vh) so vertical responsiveness works.
-    */
-    .spacer{
-      height: clamp(48px, 12vh, 140px); /* ← ②縦方向に効く＆距離を大幅に拡大 */
-      width: 100%;
-    }
-
-    /* Controls: small & grouped */
     .controls{
       display:flex;
       gap:10px;
@@ -165,9 +181,9 @@
       border-color: var(--strokeSoft);
     }
 
-    /* ① Start/Pauseの見た目で状態が即わかるようにする */
+    /* Start/Pause visual */
     .btn.start{
-      background: rgba(255,255,255,.96); /* 常に白背景 */
+      background: rgba(255,255,255,.96);
       color:#111;
       text-shadow:none;
       border-color: rgba(255,255,255,.96);
@@ -178,7 +194,7 @@
     }
 
     .btn.pause{
-      background: rgba(0,0,0,.40); /* 黒背景（うっすら） */
+      background: rgba(0,0,0,.40);
       color:#fff;
       text-shadow: var(--shadowText);
       border-color: rgba(255,255,255,.92);
@@ -194,7 +210,6 @@
       border-color: var(--strokeSoft);
     }
 
-    /* Minimal status row (Sound only) */
     .meta{
       width:min(520px, 100%);
       display:flex;
@@ -293,10 +308,12 @@
       background: rgba(255,255,255,.10);
       color:#fff;
       outline:none;
+      font-family: Helvetica, "Helvetica Neue", Arial, sans-serif;
     }
     input[type="file"]{
       color: rgba(255,255,255,.78);
       font-size:12px;
+      font-family: Helvetica, "Helvetica Neue", Arial, sans-serif;
     }
 
     .panel-actions{
@@ -325,8 +342,13 @@
       .gear{width:100%; justify-content:center;}
       .modes{width:100%; justify-content:center;}
       .btn{min-width: 84px; padding: 10px 12px;}
-      /* small screens: still keep a big vertical gap */
-      .spacer{height: clamp(52px, 12vh, 150px);}
+    }
+
+    /* 縦が極端に短い場合はgapを自動で絞る（見切れ対策） */
+    @media (max-height: 420px){
+      :root{ --gap: clamp(8px, 3.2vh, 26px); }
+      .meta{ margin-top: 10px; }
+      .mini{ font-size: 11px; }
     }
   </style>
 </head>
@@ -344,9 +366,13 @@
         <button class="gear" id="openSettings" type="button" title="設定">⚙︎ Settings</button>
       </div>
 
+      <!-- ② 上の間隔 -->
+      <div class="gap" aria-hidden="true"></div>
+
       <div class="time" id="time">25:00</div>
 
-      <div class="spacer" aria-hidden="true"></div>
+      <!-- ② 下の間隔（上と同じ） -->
+      <div class="gap" aria-hidden="true"></div>
 
       <div class="controls">
         <button class="btn start" id="startPause" type="button">Start</button>
@@ -451,7 +477,7 @@
 
   const modeButtons = Array.from(document.querySelectorAll(".mode-btn"));
 
-  const STORAGE_KEY = "notion_pomo_widget_v5";
+  const STORAGE_KEY = "notion_pomo_widget_v6";
 
   const themes = {
     aurora: [
