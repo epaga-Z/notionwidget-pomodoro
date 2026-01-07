@@ -7,13 +7,15 @@
   <style>
     :root{
       --fg:#fff;
-      --muted: rgba(255,255,255,.80);
-      --btn: rgba(0,0,0,.22);
-      --btnHover: rgba(0,0,0,.30);
-      --btnActive: rgba(0,0,0,.36);
-      --danger: rgba(255,80,80,.26);
-      --dangerHover: rgba(255,80,80,.34);
+      --muted: rgba(255,255,255,.82);
+
+      /* button look (flocus-like) */
+      --stroke: rgba(255,255,255,.90);
+      --strokeSoft: rgba(255,255,255,.65);
+
       --shadowText: 0 2px 16px rgba(0,0,0,.55);
+      --dangerStroke: rgba(255,170,170,.92);
+      --dangerFill: rgba(255,255,255,.96);
     }
 
     *{box-sizing:border-box}
@@ -21,6 +23,7 @@
     body{
       margin:0;
       color:var(--fg);
+      /* Font stack: system UI (see below in answer) */
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Hiragino Sans", "Noto Sans JP", "Helvetica Neue", Arial;
       display:flex;
       align-items:center;
@@ -41,14 +44,14 @@
       content:"";
       position:absolute; inset:0;
       background:
-        radial-gradient(980px 560px at 50% 32%, rgba(0,0,0,.18), rgba(0,0,0,.55) 72%),
-        linear-gradient(180deg, rgba(0,0,0,.08), rgba(0,0,0,.34));
+        radial-gradient(980px 560px at 50% 32%, rgba(0,0,0,.16), rgba(0,0,0,.54) 72%),
+        linear-gradient(180deg, rgba(0,0,0,.06), rgba(0,0,0,.34));
       pointer-events:none;
     }
 
     .wrap{
-      width: min(720px, 96vw);
-      height: min(520px, 92vh);
+      width: min(760px, 96vw);
+      height: min(560px, 92vh);
       padding: clamp(14px, 2.2vw, 22px);
       position:relative;
       z-index:1;
@@ -59,12 +62,11 @@
 
     /* Main UI */
     .ui{
-      width: min(620px, 100%);
+      width: min(680px, 100%);
       display:flex;
       flex-direction:column;
-      gap: clamp(10px, 1.8vh, 16px);
-      text-shadow: var(--shadowText);
       align-items:center;
+      text-shadow: var(--shadowText);
     }
 
     .top{
@@ -76,19 +78,25 @@
       flex-wrap:wrap;
     }
 
-    /* Button base: no borders */
+    /* Base button: transparent + white stroke */
     button{
-      border:none;
-      background: var(--btn);
+      border: 1px solid var(--stroke);
+      background: transparent;
       color: var(--fg);
       cursor:pointer;
       user-select:none;
       text-shadow: var(--shadowText);
-      transition: transform .08s ease, background .15s ease, opacity .15s ease;
+      transition: transform .08s ease, background .15s ease, color .15s ease, border-color .15s ease;
       -webkit-tap-highlight-color: transparent;
+      line-height: 1;
     }
     button:active{transform: scale(.98)}
-    button:hover{background: var(--btnHover)}
+    button:hover{
+      background: rgba(255,255,255,.96);
+      color:#111;
+      text-shadow:none;
+      border-color: rgba(255,255,255,.96);
+    }
     button:disabled{opacity:.55; cursor:not-allowed}
 
     .modes{
@@ -98,22 +106,24 @@
       align-items:center;
     }
     .mode-btn{
-      padding: 8px 10px;
+      padding: 8px 12px;
       border-radius: 999px;
       font-size: 12px;
-      line-height: 1;
-      background: rgba(0,0,0,.18);
+      border-color: var(--strokeSoft);
     }
+    /* Selected mode: white fill */
     .mode-btn.active{
-      background: rgba(255,255,255,.18);
-      color: #fff;
+      background: rgba(255,255,255,.96);
+      color:#111;
+      text-shadow:none;
+      border-color: rgba(255,255,255,.96);
     }
 
     .gear{
-      padding: 8px 10px;
-      border-radius: 12px;
+      padding: 8px 12px;
+      border-radius: 14px;
       font-size: 12px;
-      background: rgba(0,0,0,.18);
+      border-color: var(--strokeSoft);
       display:flex;
       align-items:center;
       gap:8px;
@@ -124,50 +134,61 @@
     .time{
       text-align:center;
       font-variant-numeric: tabular-nums;
-      font-weight: 850;
+      font-weight: 860;
       letter-spacing: .02em;
       line-height: 1;
-      font-size: clamp(64px, 14vw, 132px);
-      margin-top: clamp(10px, 2vh, 18px);
-      margin-bottom: clamp(6px, 1.2vh, 10px);
+      font-size: clamp(68px, 14.5vw, 140px);
+      margin-top: clamp(14px, 2.6vh, 22px);
+      margin-bottom: 0;
+    }
+
+    /* Spacer between timer and controls: grows with viewport height */
+    .spacer{
+      height: clamp(14px, 4.2vh, 44px);
+      width: 100%;
     }
 
     /* Controls: small & grouped */
     .controls{
       display:flex;
-      gap:8px;
+      gap:10px;
       justify-content:center;
       flex-wrap:wrap;
       align-items:center;
     }
     .btn{
-      padding: 10px 12px;
-      border-radius: 14px;
+      padding: 10px 14px;
+      border-radius: 999px;
       font-size: 12px;
-      font-weight: 700;
-      background: rgba(0,0,0,.22);
+      font-weight: 750;
       min-width: 92px;
+      border-color: var(--strokeSoft);
     }
-    .btn.primary{background: rgba(255,255,255,.16)}
-    .btn.primary:hover{background: rgba(255,255,255,.22)}
-    .btn.danger{background: var(--danger)}
-    .btn.danger:hover{background: var(--dangerHover)}
+    /* Primary: default looks like outline, but hover/active becomes white automatically via button:hover */
+    .btn.primary{
+      border-color: var(--stroke);
+    }
 
-    /* Minimal status row */
+    /* Reset: slightly softer outline; hover becomes white anyway */
+    .btn.reset{
+      border-color: var(--strokeSoft);
+    }
+
+    /* Minimal status row (Sound only) */
     .meta{
       width:min(520px, 100%);
       display:flex;
       justify-content:center;
-      margin-top: 2px;
+      margin-top: clamp(10px, 2.2vh, 18px);
     }
     .mini{
       display:flex;
-      gap:12px;
+      gap:10px;
       justify-content:center;
       flex-wrap:wrap;
       padding: 6px 10px;
       border-radius: 999px;
-      background: rgba(0,0,0,.16);
+      background: rgba(0,0,0,.12);
       color: var(--muted);
       font-size: 12px;
       text-shadow: var(--shadowText);
@@ -212,21 +233,25 @@
     }
     .panel-title{
       font-size: 14px;
-      font-weight: 800;
+      font-weight: 850;
       color: #fff;
       letter-spacing:.02em;
     }
     .close{
-      border:none;
-      background: rgba(255,255,255,.14);
+      border: 1px solid rgba(255,255,255,.80);
+      background: transparent;
       color:#fff;
-      border-radius: 12px;
+      border-radius: 999px;
       padding: 9px 12px;
       cursor:pointer;
-      font-weight:700;
+      font-weight:750;
       text-shadow:none;
     }
-    .close:hover{background: rgba(255,255,255,.20)}
+    .close:hover{
+      background: rgba(255,255,255,.96);
+      color:#111;
+      border-color: rgba(255,255,255,.96);
+    }
 
     .grid{
       display:grid;
@@ -244,7 +269,7 @@
       width:100%;
       padding: 10px 10px;
       border-radius: 12px;
-      border:none; /* ← ④枠線なし */
+      border:none;
       background: rgba(255,255,255,.10);
       color:#fff;
       outline:none;
@@ -261,6 +286,15 @@
       flex-wrap:wrap;
     }
 
+    /* Action buttons inside panel: match outline/filled hover */
+    .panel-actions button{
+      padding: 10px 14px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+      border-color: rgba(255,255,255,.80);
+    }
+
     .hint{
       margin-top: 10px;
       font-size: 11px;
@@ -269,11 +303,12 @@
     }
 
     @media (max-width: 520px){
-      .wrap{height: min(600px, 92vh);}
+      .wrap{height: min(640px, 92vh);}
       .grid{grid-template-columns: 1fr;}
       .gear{width:100%; justify-content:center;}
       .modes{width:100%; justify-content:center;}
-      .btn{min-width: 84px; padding: 10px 10px;}
+      .btn{min-width: 84px; padding: 10px 12px;}
+      .spacer{height: clamp(16px, 5vh, 54px);}
     }
   </style>
 </head>
@@ -293,14 +328,15 @@
 
       <div class="time" id="time">25:00</div>
 
+      <div class="spacer" aria-hidden="true"></div>
+
       <div class="controls">
         <button class="btn primary" id="startPause" type="button">Start</button>
-        <button class="btn danger" id="reset" type="button">Reset</button>
+        <button class="btn reset" id="reset" type="button">Reset</button>
       </div>
 
       <div class="meta">
         <div class="mini">
-          <span>Long break: <strong id="longEveryLabel">every 4 focus</strong></span>
           <span>Sound: <strong id="soundLabel">On</strong></span>
         </div>
       </div>
@@ -355,8 +391,8 @@
         </div>
 
         <div class="panel-actions">
-          <button class="btn primary" id="apply" type="button">Apply</button>
-          <button class="btn" id="clearBg" type="button">Clear background</button>
+          <button id="apply" type="button">Apply</button>
+          <button id="clearBg" type="button">Clear background</button>
         </div>
 
         <div class="hint">
@@ -385,7 +421,6 @@
   const shortMinEl = $("shortMin");
   const longMinEl  = $("longMin");
   const longEveryEl = $("longEvery");
-  const longEveryLabel = $("longEveryLabel");
 
   const themeEl = $("theme");
   const bgUrlEl = $("bgUrl");
@@ -398,7 +433,7 @@
 
   const modeButtons = Array.from(document.querySelectorAll(".mode-btn"));
 
-  const STORAGE_KEY = "notion_pomo_widget_v3";
+  const STORAGE_KEY = "notion_pomo_widget_v4";
 
   const themes = {
     aurora: [
@@ -509,8 +544,6 @@
     shortMinEl.value = Math.round(state.durations.short/60);
     longMinEl.value  = Math.round(state.durations.long/60);
     longEveryEl.value = state.longEvery;
-
-    longEveryLabel.textContent = `every ${state.longEvery} focus`;
 
     themeEl.value = state.theme;
     bgUrlEl.value = state.customBgUrl || "";
