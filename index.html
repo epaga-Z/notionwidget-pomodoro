@@ -14,8 +14,9 @@
 
       --shadowText: 0 2px 16px rgba(0,0,0,.55);
 
-      /* タイマー上下の間隔（上も下も同じ） */
-      --gap: clamp(14px, 6vh, 64px);
+      /* ✅ ① タイマー上下の間隔（上も下も同じ）
+         以前より「倍程度」広く：min/max を大きく、vh係数も上げる */
+      --gap: clamp(28px, 12vh, 128px);
     }
 
     *{box-sizing:border-box}
@@ -24,17 +25,13 @@
     body{
       margin:0;
       color:var(--fg);
-
-      /* ③ Helveticaに統一（macOS/iOSならHelveticaが基本的に存在） */
       font-family: Helvetica, "Helvetica Neue", Arial, sans-serif;
 
       display:flex;
       align-items:center;
       justify-content:center;
 
-      /* ① 縦が短い時に見切れないようスクロール可能に */
       overflow:auto;
-
       background:#111;
     }
 
@@ -58,8 +55,6 @@
 
     .wrap{
       width: min(760px, 96vw);
-
-      /* ① 以前の固定高さが見切れ原因になりやすいので撤廃 */
       min-height: 100%;
       padding: clamp(14px, 2.2vw, 22px);
 
@@ -70,8 +65,8 @@
       align-items:center;
       justify-content:center;
 
-      /* iframe内で内容が溢れたらスクロール */
       overflow:auto;
+      -webkit-overflow-scrolling: touch;
     }
 
     .ui{
@@ -142,7 +137,7 @@
       white-space: nowrap;
     }
 
-    /* ② タイマーの上/下で同じ間隔を使う */
+    /* ① タイマーの上/下で同じ間隔を使う */
     .gap{
       height: var(--gap);
       width:100%;
@@ -153,13 +148,13 @@
       text-align:center;
       font-variant-numeric: tabular-nums;
 
-      /* 少し細め */
-      font-weight: 720;
+      /* ✅ ② さらに細く */
+      font-weight: 520;
 
       letter-spacing: .02em;
       line-height: 1;
 
-      /* ① 縦が短い時に巨大化しすぎないよう、vh制限も入れる */
+      /* 縦が短いときに巨大化しすぎないよう vh 制限は維持 */
       font-size: min(clamp(72px, 15vw, 148px), 42vh);
 
       margin:0;
@@ -230,7 +225,6 @@
     }
     .mini strong{color:var(--fg)}
 
-    /* Settings overlay (scrollable) */
     .overlay{
       position:absolute;
       inset: 0;
@@ -344,11 +338,12 @@
       .btn{min-width: 84px; padding: 10px 12px;}
     }
 
-    /* 縦が極端に短い場合はgapを自動で絞る（見切れ対策） */
+    /* 縦が極端に短い場合はgapを少し絞る（見切れ回避優先） */
     @media (max-height: 420px){
-      :root{ --gap: clamp(8px, 3.2vh, 26px); }
+      :root{ --gap: clamp(16px, 6vh, 44px); }
       .meta{ margin-top: 10px; }
       .mini{ font-size: 11px; }
+      .time{ font-size: min(clamp(56px, 14vw, 120px), 40vh); }
     }
   </style>
 </head>
@@ -366,12 +361,10 @@
         <button class="gear" id="openSettings" type="button" title="設定">⚙︎ Settings</button>
       </div>
 
-      <!-- ② 上の間隔 -->
       <div class="gap" aria-hidden="true"></div>
 
       <div class="time" id="time">25:00</div>
 
-      <!-- ② 下の間隔（上と同じ） -->
       <div class="gap" aria-hidden="true"></div>
 
       <div class="controls">
@@ -477,7 +470,7 @@
 
   const modeButtons = Array.from(document.querySelectorAll(".mode-btn"));
 
-  const STORAGE_KEY = "notion_pomo_widget_v6";
+  const STORAGE_KEY = "notion_pomo_widget_v7";
 
   const themes = {
     aurora: [
@@ -545,9 +538,7 @@
     }
   }
 
-  function saveState(){
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  }
+  function saveState(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
 
   function formatTime(sec){
     sec = Math.max(0, Math.floor(sec));
@@ -707,7 +698,6 @@
     overlay.classList.remove("open");
   }
 
-  // Events
   modeButtons.forEach(b => b.addEventListener("click", () => {
     const m = b.dataset.mode;
     pauseTimer();
