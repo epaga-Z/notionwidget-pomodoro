@@ -14,7 +14,7 @@
 
       --shadowText: 0 2px 16px rgba(0,0,0,.55);
 
-      /* ✅ タイマー上下の間隔（上も下も同じ）— 1.5倍 */
+      /* タイマー上下の間隔（上も下も同じ） */
       --gap: clamp(42px, 18vh, 192px);
     }
 
@@ -77,16 +77,14 @@
       position: relative;
     }
 
-    /* ✅ 1) 上のボタン類を中央へ：モードは中央、設定は右上に固定 */
+    /* 上部：モードは中央、設定は右側（前のままの見た目） */
     .top{
       width:100%;
-      position: relative;
       display:flex;
       align-items:center;
-      justify-content:center; /* 中央寄せ */
+      justify-content:space-between;
       gap:12px;
       flex-wrap:wrap;
-      padding-right: 44px; /* gearが重ならないように余白 */
     }
 
     /* Base buttons */
@@ -115,7 +113,8 @@
       gap:8px;
       flex-wrap:wrap;
       align-items:center;
-      justify-content:center; /* 中央寄せ */
+      justify-content:center;
+      margin: 0 auto; /* 左右の間で自然に中央寄せ */
     }
     .mode-btn{
       padding: 8px 12px;
@@ -130,10 +129,8 @@
       border-color: rgba(255,255,255,.96);
     }
 
+    /* ✅ 1) Settingsボタンを前のまま（テキスト付き） */
     .gear{
-      position:absolute;
-      right:0;
-      top:0;
       padding: 8px 12px;
       border-radius: 14px;
       font-size: 12px;
@@ -144,17 +141,15 @@
       white-space: nowrap;
     }
 
-    /* Gap */
     .gap{
       height: var(--gap);
       width:100%;
     }
 
-    /* Timer */
     .time{
       text-align:center;
       font-variant-numeric: tabular-nums;
-      font-weight: 520; /* フォントは現状維持 */
+      font-weight: 520;
       letter-spacing: .02em;
       line-height: 1;
       font-size: min(clamp(72px, 15vw, 148px), 42vh);
@@ -177,7 +172,6 @@
       border-color: var(--strokeSoft);
     }
 
-    /* Start/Pause visual */
     .btn.start{
       background: rgba(255,255,255,.96);
       color:#111;
@@ -203,32 +197,6 @@
     }
 
     .btn.reset{ border-color: var(--strokeSoft); }
-
-    /* ✅ 3) Sound表示 → 右下の小アイコンへ */
-    .sound-fab{
-      position: absolute;
-      right: 0;
-      bottom: 0;
-      transform: translateY(6px);
-      width: 38px;
-      height: 38px;
-      border-radius: 999px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      border: 1px solid rgba(255,255,255,.55);
-      background: rgba(0,0,0,.18);
-      opacity: .7;
-      font-size: 16px;
-      padding: 0;
-    }
-    .sound-fab:hover{
-      opacity: 1;
-      background: rgba(255,255,255,.96);
-      color:#111;
-      text-shadow:none;
-      border-color: rgba(255,255,255,.96);
-    }
 
     /* Settings overlay (scrollable) */
     .overlay{
@@ -339,25 +307,11 @@
 
     @media (max-width: 520px){
       .grid{grid-template-columns: 1fr;}
-
-      /* 小画面では「中央寄せ」より実用性優先で縦並び */
-      .top{
-        justify-content:center;
-        padding-right: 0;
-      }
-      .gear{
-        position: static;
-      }
-
+      .gear{width:100%; justify-content:center;}
+      .modes{width:100%; justify-content:center; margin:0;}
       .btn{min-width: 84px; padding: 10px 12px;}
-      .sound-fab{
-        right: 6px;
-        bottom: 6px;
-        transform: none;
-      }
     }
 
-    /* 縦が極端に短い場合はgapを少し絞る（見切れ回避優先）※ここも1.5倍相当に */
     @media (max-height: 420px){
       :root{ --gap: clamp(24px, 9vh, 66px); }
       .time{ font-size: min(clamp(56px, 14vw, 120px), 40vh); }
@@ -375,7 +329,7 @@
           <button class="mode-btn" data-mode="short" type="button">Short</button>
           <button class="mode-btn" data-mode="long" type="button">Long</button>
         </div>
-        <button class="gear" id="openSettings" type="button" title="設定">⚙︎</button>
+        <button class="gear" id="openSettings" type="button" title="設定">⚙︎ Settings</button>
       </div>
 
       <div class="gap" aria-hidden="true"></div>
@@ -388,9 +342,6 @@
         <button class="btn start" id="startPause" type="button">Start</button>
         <button class="btn reset" id="reset" type="button">Reset</button>
       </div>
-
-      <!-- ✅ 3) 右下の小さな音アイコン -->
-      <button class="sound-fab" id="soundFab" type="button" title="Sound: On" aria-label="toggle sound">🔊</button>
     </div>
 
     <!-- Settings overlay -->
@@ -478,14 +429,12 @@
   const bgFileEl = $("bgFile");
   const soundEl = $("sound");
 
-  const soundFab = $("soundFab");
-
   const applyBtn = $("apply");
   const clearBgBtn = $("clearBg");
 
   const modeButtons = Array.from(document.querySelectorAll(".mode-btn"));
 
-  const STORAGE_KEY = "notion_pomo_widget_v8";
+  const STORAGE_KEY = "notion_pomo_widget_v9";
 
   const themes = {
     aurora: [
@@ -598,14 +547,6 @@
     }
   }
 
-  function renderSoundIcon(){
-    const on = state.sound === "on";
-    soundFab.textContent = on ? "🔊" : "🔇";
-    soundFab.title = `Sound: ${on ? "On" : "Off"}`;
-    soundFab.setAttribute("aria-label", `toggle sound (${on ? "on" : "off"})`);
-    soundEl.value = state.sound; // settingsと同期
-  }
-
   function render(){
     setActiveMode(state.mode);
     timeEl.textContent = formatTime(state.remaining);
@@ -617,9 +558,9 @@
 
     themeEl.value = state.theme;
     bgUrlEl.value = state.customBgUrl || "";
+    soundEl.value = state.sound;
 
     setStartPauseVisual();
-    renderSoundIcon();
     applyBackground();
   }
 
@@ -720,7 +661,6 @@
     overlay.classList.remove("open");
   }
 
-  // Events
   modeButtons.forEach(b => b.addEventListener("click", () => {
     const m = b.dataset.mode;
     pauseTimer();
@@ -744,24 +684,6 @@
     if(e.key === "Escape" && overlay.classList.contains("open")) closeSettings();
   });
 
-  // Sound icon toggle
-  soundFab.addEventListener("click", () => {
-    state.sound = (state.sound === "on") ? "off" : "on";
-    saveState();
-    render();
-  });
-
-  // Keep settings dropdown in sync when changed
-  soundEl.addEventListener("change", () => {
-    state.sound = soundEl.value;
-    saveState();
-    render();
-  });
-
-  const applyBtn = $("apply");
-  const clearBgBtn = $("clearBg");
-  const bgFileEl = $("bgFile");
-
   applyBtn.addEventListener("click", () => {
     const f = clamp(Number(focusMinEl.value)||25, 1, 180) * 60;
     const s = clamp(Number(shortMinEl.value)||5, 1, 60) * 60;
@@ -775,6 +697,8 @@
 
     state.customBgUrl = (bgUrlEl.value || "").trim();
     if(state.customBgUrl) state.customBgDataUrl = "";
+
+    state.sound = soundEl.value;
 
     state.remaining = clamp(state.remaining, 0, state.durations[state.mode]);
 
