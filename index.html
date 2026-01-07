@@ -3,16 +3,17 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Notion Pomodoro Widget (Responsive)</title>
+  <title>Notion Pomodoro Widget (Flocus-like)</title>
   <style>
     :root{
       --fg:#fff;
-      --muted: rgba(255,255,255,.78);
-      --ring: rgba(255,255,255,.22);
-      --btn: rgba(255,255,255,.14);
-      --btn2: rgba(255,255,255,.22);
-      --danger: rgba(255,80,80,.22);
-      --shadowText: 0 2px 14px rgba(0,0,0,.55);
+      --muted: rgba(255,255,255,.80);
+      --btn: rgba(0,0,0,.22);
+      --btnHover: rgba(0,0,0,.30);
+      --btnActive: rgba(0,0,0,.36);
+      --danger: rgba(255,80,80,.26);
+      --dangerHover: rgba(255,80,80,.34);
+      --shadowText: 0 2px 16px rgba(0,0,0,.55);
     }
 
     *{box-sizing:border-box}
@@ -28,7 +29,7 @@
       background:#111;
     }
 
-    /* Background (no glass blur overlay) */
+    /* Background */
     .bg{
       position:fixed; inset:0;
       background-size: cover;
@@ -36,17 +37,15 @@
       transform:scale(1.02);
       filter:saturate(1.05);
     }
-    /* readability vignette (no blur) */
     .bg::after{
       content:"";
       position:absolute; inset:0;
       background:
-        radial-gradient(900px 520px at 50% 30%, rgba(0,0,0,.20), rgba(0,0,0,.55) 70%),
-        linear-gradient(180deg, rgba(0,0,0,.15), rgba(0,0,0,.35));
+        radial-gradient(980px 560px at 50% 32%, rgba(0,0,0,.18), rgba(0,0,0,.55) 72%),
+        linear-gradient(180deg, rgba(0,0,0,.08), rgba(0,0,0,.34));
       pointer-events:none;
     }
 
-    /* Container */
     .wrap{
       width: min(720px, 96vw);
       height: min(520px, 92vh);
@@ -58,16 +57,18 @@
       justify-content:center;
     }
 
-    /* Main UI: no card background, just layout */
+    /* Main UI */
     .ui{
-      width: min(560px, 100%);
+      width: min(620px, 100%);
       display:flex;
       flex-direction:column;
-      gap: clamp(10px, 1.6vh, 16px);
+      gap: clamp(10px, 1.8vh, 16px);
       text-shadow: var(--shadowText);
+      align-items:center;
     }
 
     .top{
+      width:100%;
       display:flex;
       align-items:center;
       justify-content:space-between;
@@ -75,124 +76,103 @@
       flex-wrap:wrap;
     }
 
-    .mode{
+    /* Button base: no borders */
+    button{
+      border:none;
+      background: var(--btn);
+      color: var(--fg);
+      cursor:pointer;
+      user-select:none;
+      text-shadow: var(--shadowText);
+      transition: transform .08s ease, background .15s ease, opacity .15s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+    button:active{transform: scale(.98)}
+    button:hover{background: var(--btnHover)}
+    button:disabled{opacity:.55; cursor:not-allowed}
+
+    .modes{
       display:flex;
       gap:8px;
       flex-wrap:wrap;
+      align-items:center;
     }
-
-    .pill{
-      border:1px solid var(--ring);
-      background: rgba(0,0,0,.10);
-      color:var(--fg);
-      padding:10px 12px;
-      border-radius:999px;
-      font-size:12px;
-      cursor:pointer;
-      user-select:none;
-      line-height:1;
-      transition:transform .08s ease, background .15s ease;
-      text-shadow: var(--shadowText);
+    .mode-btn{
+      padding: 8px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      line-height: 1;
+      background: rgba(0,0,0,.18);
     }
-    .pill:active{transform:scale(.98)}
-    .pill.active{background: rgba(255,255,255,.16)}
+    .mode-btn.active{
+      background: rgba(255,255,255,.18);
+      color: #fff;
+    }
 
     .gear{
-      border:1px solid var(--ring);
-      background: rgba(0,0,0,.10);
-      color:var(--fg);
-      padding:10px 12px;
-      border-radius: 14px;
-      cursor:pointer;
-      user-select:none;
+      padding: 8px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      background: rgba(0,0,0,.18);
       display:flex;
       align-items:center;
       gap:8px;
-      font-size:12px;
-      text-shadow: var(--shadowText);
+      white-space: nowrap;
     }
 
+    /* Big timer */
     .time{
       text-align:center;
       font-variant-numeric: tabular-nums;
-      font-weight: 800;
+      font-weight: 850;
       letter-spacing: .02em;
-      font-size: clamp(44px, 10vw, 92px);
       line-height: 1;
-      margin-top: 2px;
-    }
-    .sub{
-      text-align:center;
-      color: var(--muted);
-      font-size: clamp(12px, 2.5vw, 14px);
-      margin-top: -6px;
+      font-size: clamp(64px, 14vw, 132px);
+      margin-top: clamp(10px, 2vh, 18px);
+      margin-bottom: clamp(6px, 1.2vh, 10px);
     }
 
-    .progress{
-      height: 10px;
-      border-radius: 999px;
-      background: rgba(255,255,255,.14);
-      border: 1px solid rgba(255,255,255,.18);
-      overflow:hidden;
-      box-shadow: 0 8px 24px rgba(0,0,0,.25);
-    }
-    .bar{
-      height:100%;
-      width:0%;
-      background: rgba(255,255,255,.82);
-      border-right: 1px solid rgba(255,255,255,.35);
-      transition: width .25s linear;
-    }
-
+    /* Controls: small & grouped */
     .controls{
       display:flex;
-      gap:10px;
+      gap:8px;
       justify-content:center;
       flex-wrap:wrap;
+      align-items:center;
     }
     .btn{
-      min-width: 110px;
-      border-radius: 16px;
-      border:1px solid var(--ring);
-      background: var(--btn);
-      color:var(--fg);
-      padding: 12px 14px;
-      cursor:pointer;
-      user-select:none;
-      font-weight: 650;
-      transition:transform .08s ease, background .15s ease;
-      text-shadow: var(--shadowText);
+      padding: 10px 12px;
+      border-radius: 14px;
+      font-size: 12px;
+      font-weight: 700;
+      background: rgba(0,0,0,.22);
+      min-width: 92px;
     }
-    .btn:active{transform:scale(.98)}
-    .btn.primary{background: var(--btn2)}
+    .btn.primary{background: rgba(255,255,255,.16)}
+    .btn.primary:hover{background: rgba(255,255,255,.22)}
     .btn.danger{background: var(--danger)}
+    .btn.danger:hover{background: var(--dangerHover)}
 
+    /* Minimal status row */
     .meta{
+      width:min(520px, 100%);
       display:flex;
       justify-content:center;
+      margin-top: 2px;
     }
     .mini{
-      width: min(520px, 100%);
       display:flex;
-      gap:10px;
-      justify-content:space-between;
+      gap:12px;
+      justify-content:center;
       flex-wrap:wrap;
-      border:1px solid rgba(255,255,255,.16);
-      background: rgba(0,0,0,.12);
-      border-radius: 16px;
-      padding: 10px 12px;
-      box-shadow: 0 10px 30px rgba(0,0,0,.18);
-    }
-    .row{
-      display:flex;
-      gap:8px;
-      align-items:center;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(0,0,0,.16);
       color: var(--muted);
       font-size: 12px;
       text-shadow: var(--shadowText);
-      white-space: nowrap;
     }
-    .row strong{color:var(--fg); font-weight:650}
+    .mini strong{color:var(--fg)}
 
     /* Settings overlay (scrollable) */
     .overlay{
@@ -205,21 +185,19 @@
       z-index: 10;
     }
     .overlay.open{display:flex}
-
     .overlay::before{
       content:"";
       position:absolute; inset:0;
-      background: rgba(0,0,0,.55);
+      background: rgba(0,0,0,.58);
     }
 
     .panel{
       position:relative;
       width: min(640px, 100%);
       max-height: min(78vh, 520px);
-      overflow:auto; /* ← ③スクロール可能 */
+      overflow:auto;
       border-radius: 18px;
-      border: 1px solid rgba(255,255,255,.16);
-      background: rgba(15,15,15,.92); /* ← ガラスではなくほぼソリッド */
+      background: rgba(15,15,15,.92);
       box-shadow: 0 18px 60px rgba(0,0,0,.55);
       padding: 14px;
       text-shadow:none;
@@ -234,19 +212,21 @@
     }
     .panel-title{
       font-size: 14px;
-      font-weight: 750;
+      font-weight: 800;
       color: #fff;
       letter-spacing:.02em;
     }
     .close{
-      border:1px solid rgba(255,255,255,.18);
-      background: rgba(255,255,255,.10);
+      border:none;
+      background: rgba(255,255,255,.14);
       color:#fff;
       border-radius: 12px;
       padding: 9px 12px;
       cursor:pointer;
-      font-weight:650;
+      font-weight:700;
+      text-shadow:none;
     }
+    .close:hover{background: rgba(255,255,255,.20)}
 
     .grid{
       display:grid;
@@ -264,8 +244,8 @@
       width:100%;
       padding: 10px 10px;
       border-radius: 12px;
-      border:1px solid rgba(255,255,255,.18);
-      background: rgba(255,255,255,.08);
+      border:none; /* ← ④枠線なし */
+      background: rgba(255,255,255,.10);
       color:#fff;
       outline:none;
     }
@@ -288,13 +268,12 @@
       line-height:1.45;
     }
 
-    /* Responsive tweaks */
     @media (max-width: 520px){
-      .wrap{height: min(560px, 92vh);}
-      .grid{grid-template-columns: 1fr;} /* ← ①小画面は1列 */
-      .btn{min-width: 96px; width: calc(50% - 5px);}
+      .wrap{height: min(600px, 92vh);}
+      .grid{grid-template-columns: 1fr;}
       .gear{width:100%; justify-content:center;}
-      .mode{width:100%; justify-content:center;}
+      .modes{width:100%; justify-content:center;}
+      .btn{min-width: 84px; padding: 10px 10px;}
     }
   </style>
 </head>
@@ -304,31 +283,25 @@
   <div class="wrap" id="wrap">
     <div class="ui" aria-label="pomodoro">
       <div class="top">
-        <div class="mode">
-          <div class="pill active" data-mode="focus">Focus</div>
-          <div class="pill" data-mode="short">Short</div>
-          <div class="pill" data-mode="long">Long</div>
+        <div class="modes">
+          <button class="mode-btn active" data-mode="focus" type="button">Focus</button>
+          <button class="mode-btn" data-mode="short" type="button">Short</button>
+          <button class="mode-btn" data-mode="long" type="button">Long</button>
         </div>
-        <button class="gear" id="openSettings" title="設定">⚙︎ Settings</button>
+        <button class="gear" id="openSettings" type="button" title="設定">⚙︎ Settings</button>
       </div>
 
       <div class="time" id="time">25:00</div>
-      <div class="sub" id="subtitle">Session 1 · Focus</div>
-
-      <div class="progress" aria-label="progress">
-        <div class="bar" id="bar"></div>
-      </div>
 
       <div class="controls">
-        <button class="btn primary" id="startPause">Start</button>
-        <button class="btn" id="skip">Skip</button>
-        <button class="btn danger" id="reset">Reset</button>
+        <button class="btn primary" id="startPause" type="button">Start</button>
+        <button class="btn danger" id="reset" type="button">Reset</button>
       </div>
 
       <div class="meta">
         <div class="mini">
-          <div class="row"><span>Next long break</span><strong id="longEveryLabel">every 4 focus</strong></div>
-          <div class="row"><span>Sound</span><strong id="soundLabel">On</strong></div>
+          <span>Long break: <strong id="longEveryLabel">every 4 focus</strong></span>
+          <span>Sound: <strong id="soundLabel">On</strong></span>
         </div>
       </div>
     </div>
@@ -338,7 +311,7 @@
       <div class="panel">
         <div class="panel-head">
           <div class="panel-title">Settings</div>
-          <button class="close" id="closeSettings">Close</button>
+          <button class="close" id="closeSettings" type="button">Close</button>
         </div>
 
         <div class="grid">
@@ -382,8 +355,8 @@
         </div>
 
         <div class="panel-actions">
-          <button class="btn primary" id="apply">Apply</button>
-          <button class="btn" id="clearBg">Clear custom background</button>
+          <button class="btn primary" id="apply" type="button">Apply</button>
+          <button class="btn" id="clearBg" type="button">Clear background</button>
         </div>
 
         <div class="hint">
@@ -400,11 +373,8 @@
 
   const bg = $("bg");
   const timeEl = $("time");
-  const subtitleEl = $("subtitle");
-  const barEl = $("bar");
 
   const startPauseBtn = $("startPause");
-  const skipBtn = $("skip");
   const resetBtn = $("reset");
 
   const openSettingsBtn = $("openSettings");
@@ -426,9 +396,9 @@
   const applyBtn = $("apply");
   const clearBgBtn = $("clearBg");
 
-  const pills = Array.from(document.querySelectorAll(".pill"));
+  const modeButtons = Array.from(document.querySelectorAll(".mode-btn"));
 
-  const STORAGE_KEY = "notion_pomo_widget_v2";
+  const STORAGE_KEY = "notion_pomo_widget_v3";
 
   const themes = {
     aurora: [
@@ -469,7 +439,6 @@
   let state = loadState();
   let timerId = null;
   let lastTick = null;
-  let totalForMode = state.durations[state.mode];
 
   function clamp(n, min, max){ return Math.max(min, Math.min(max, n)); }
 
@@ -508,8 +477,8 @@
     return String(m).padStart(2,"0")+":"+String(s).padStart(2,"0");
   }
 
-  function setActivePill(mode){
-    pills.forEach(p=>p.classList.toggle("active", p.dataset.mode === mode));
+  function setActiveMode(mode){
+    modeButtons.forEach(b => b.classList.toggle("active", b.dataset.mode === mode));
   }
 
   function applyBackground(){
@@ -530,20 +499,11 @@
       bg.style.backgroundPosition = "center";
       return;
     }
-    // else keep theme gradients
   }
 
   function render(){
-    setActivePill(state.mode);
+    setActiveMode(state.mode);
     timeEl.textContent = formatTime(state.remaining);
-    totalForMode = state.durations[state.mode];
-    const pct = totalForMode ? (1 - state.remaining/totalForMode) : 0;
-    barEl.style.width = (clamp(pct, 0, 1)*100).toFixed(2)+"%";
-
-    const session = state.focusCount + (state.mode === "focus" ? 1 : 0);
-    subtitleEl.textContent = `Session ${Math.max(1, session)} · ${capitalize(state.mode)}`;
-
-    startPauseBtn.textContent = state.running ? "Pause" : "Start";
 
     focusMinEl.value = Math.round(state.durations.focus/60);
     shortMinEl.value = Math.round(state.durations.short/60);
@@ -557,10 +517,10 @@
     soundEl.value = state.sound;
     soundLabel.textContent = state.sound === "on" ? "On" : "Off";
 
+    startPauseBtn.textContent = state.running ? "Pause" : "Start";
+
     applyBackground();
   }
-
-  function capitalize(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
 
   function beep(){
     if(state.sound !== "on") return;
@@ -649,18 +609,8 @@
     render();
   }
 
-  function skip(){
-    pauseTimer();
-    state.remaining = 0;
-    saveState();
-    render();
-    beep();
-    nextMode();
-  }
-
   function openSettings(){
     overlay.classList.add("open");
-    // scroll to top each time (optional)
     const panel = overlay.querySelector(".panel");
     if(panel) panel.scrollTop = 0;
   }
@@ -670,8 +620,8 @@
   }
 
   // Events
-  pills.forEach(p => p.addEventListener("click", () => {
-    const m = p.dataset.mode;
+  modeButtons.forEach(b => b.addEventListener("click", () => {
+    const m = b.dataset.mode;
     pauseTimer();
     switchMode(m, true);
   }));
@@ -681,17 +631,14 @@
   });
 
   resetBtn.addEventListener("click", resetTimer);
-  skipBtn.addEventListener("click", skip);
 
   openSettingsBtn.addEventListener("click", openSettings);
   closeSettingsBtn.addEventListener("click", closeSettings);
 
-  // click outside panel to close
   overlay.addEventListener("click", (e) => {
     if(e.target === overlay) closeSettings();
   });
 
-  // ESC to close
   window.addEventListener("keydown", (e) => {
     if(e.key === "Escape" && overlay.classList.contains("open")) closeSettings();
   });
