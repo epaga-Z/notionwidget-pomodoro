@@ -1,0 +1,663 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Notion Pomodoro Widget</title>
+  <style>
+    :root{
+      --fg: #ffffff;
+      --muted: rgba(255,255,255,.75);
+      --card: rgba(0,0,0,.30);
+      --card2: rgba(0,0,0,.18);
+      --shadow: 0 16px 50px rgba(0,0,0,.35);
+      --radius: 18px;
+      --ring: rgba(255,255,255,.18);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      color:var(--fg);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Hiragino Sans", "Noto Sans JP", "Helvetica Neue", Arial, "Apple Color Emoji","Segoe UI Emoji";
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      overflow:hidden;
+      background:#111;
+    }
+
+    /* Background layer */
+    .bg{
+      position:fixed; inset:0;
+      background: radial-gradient(1200px 700px at 20% 15%, rgba(255,255,255,.12), transparent 60%),
+                  radial-gradient(900px 600px at 80% 25%, rgba(255,255,255,.10), transparent 55%),
+                  linear-gradient(135deg, #2b1055, #0b5b6b);
+      background-size: cover;
+      background-position:center;
+      filter:saturate(1.05);
+      transform:scale(1.02);
+    }
+    .bg::after{
+      content:"";
+      position:absolute; inset:-20px;
+      background: rgba(0,0,0,.18);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .wrap{
+      width:min(420px, 92vw);
+      padding:18px;
+      position:relative;
+      z-index:1;
+    }
+
+    .card{
+      background: var(--card);
+      border: 1px solid var(--ring);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .card-inner{
+      padding:18px;
+      display:flex;
+      flex-direction:column;
+      gap:14px;
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,0));
+    }
+
+    .top{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:12px;
+    }
+    .mode{
+      display:flex; gap:8px; flex-wrap:wrap;
+    }
+    .pill{
+      border:1px solid var(--ring);
+      background: rgba(255,255,255,.08);
+      color:var(--fg);
+      padding:8px 10px;
+      border-radius:999px;
+      font-size:12px;
+      cursor:pointer;
+      user-select:none;
+      transition:transform .08s ease, background .15s ease;
+      line-height:1;
+    }
+    .pill:active{transform:scale(.98)}
+    .pill.active{background: rgba(255,255,255,.18)}
+    .gear{
+      border:1px solid var(--ring);
+      background: rgba(255,255,255,.08);
+      color:var(--fg);
+      padding:8px 10px;
+      border-radius:12px;
+      cursor:pointer;
+      user-select:none;
+      display:flex; align-items:center; gap:8px;
+      font-size:12px;
+    }
+
+    .time{
+      text-align:center;
+      font-variant-numeric: tabular-nums;
+      font-weight: 700;
+      letter-spacing: .02em;
+      font-size: 66px;
+      line-height: 1;
+      padding: 6px 0 0;
+    }
+    .sub{
+      text-align:center;
+      color: var(--muted);
+      font-size: 12px;
+      margin-top:-6px;
+    }
+
+    .progress{
+      height:10px;
+      border-radius:999px;
+      background: rgba(255,255,255,.12);
+      border:1px solid rgba(255,255,255,.16);
+      overflow:hidden;
+    }
+    .bar{
+      height:100%;
+      width:0%;
+      background: rgba(255,255,255,.70);
+      border-right: 1px solid rgba(255,255,255,.35);
+      transition: width .25s linear;
+    }
+
+    .controls{
+      display:flex;
+      gap:10px;
+      justify-content:center;
+      margin-top:4px;
+      flex-wrap:wrap;
+    }
+    .btn{
+      min-width:110px;
+      border-radius: 14px;
+      border:1px solid var(--ring);
+      background: rgba(255,255,255,.10);
+      color:var(--fg);
+      padding:10px 12px;
+      cursor:pointer;
+      user-select:none;
+      font-weight:600;
+      transition:transform .08s ease, background .15s ease;
+    }
+    .btn:active{transform:scale(.98)}
+    .btn.primary{background: rgba(255,255,255,.20)}
+    .btn.danger{background: rgba(255,80,80,.18)}
+    .row{
+      display:flex; justify-content:space-between; align-items:center;
+      gap:10px;
+      color:var(--muted);
+      font-size:12px;
+    }
+    .row strong{color:var(--fg); font-weight:600}
+    .mini{
+      background: rgba(0,0,0,.18);
+      border:1px solid rgba(255,255,255,.10);
+      padding:10px 12px;
+      border-radius: 14px;
+      display:flex; flex-direction:column; gap:8px;
+    }
+
+    /* Settings drawer */
+    .drawer{
+      margin-top:12px;
+      display:none;
+    }
+    .drawer.open{display:block}
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+    }
+    label{
+      display:flex; flex-direction:column; gap:6px;
+      font-size:12px;
+      color: var(--muted);
+    }
+    input[type="number"], input[type="text"], select{
+      width:100%;
+      padding:10px 10px;
+      border-radius: 12px;
+      border:1px solid rgba(255,255,255,.18);
+      background: rgba(255,255,255,.08);
+      color: var(--fg);
+      outline:none;
+    }
+    input[type="file"]{
+      color:var(--muted);
+      font-size:12px;
+    }
+    .hint{
+      font-size:11px;
+      color: rgba(255,255,255,.70);
+      line-height:1.35;
+    }
+    .footer{
+      text-align:center;
+      font-size:11px;
+      color: rgba(255,255,255,.55);
+      padding: 10px 0 2px;
+    }
+    a{color:rgba(255,255,255,.85)}
+  </style>
+</head>
+<body>
+  <div class="bg" id="bg"></div>
+
+  <div class="wrap">
+    <div class="card">
+      <div class="card-inner">
+        <div class="top">
+          <div class="mode">
+            <div class="pill active" data-mode="focus">Focus</div>
+            <div class="pill" data-mode="short">Short</div>
+            <div class="pill" data-mode="long">Long</div>
+          </div>
+          <button class="gear" id="toggleSettings" title="設定">
+            ⚙︎ Settings
+          </button>
+        </div>
+
+        <div class="time" id="time">25:00</div>
+        <div class="sub" id="subtitle">Session 1 · Focus</div>
+
+        <div class="progress" aria-label="progress">
+          <div class="bar" id="bar"></div>
+        </div>
+
+        <div class="controls">
+          <button class="btn primary" id="startPause">Start</button>
+          <button class="btn" id="skip">Skip</button>
+          <button class="btn danger" id="reset">Reset</button>
+        </div>
+
+        <div class="mini">
+          <div class="row"><span>Next long break</span><strong id="longEveryLabel">every 4 focus</strong></div>
+          <div class="row"><span>Sound</span><strong id="soundLabel">On</strong></div>
+        </div>
+
+        <div class="drawer" id="drawer">
+          <div class="grid">
+            <label>Focus (min)
+              <input type="number" id="focusMin" min="1" max="180" step="1" />
+            </label>
+            <label>Short break (min)
+              <input type="number" id="shortMin" min="1" max="60" step="1" />
+            </label>
+            <label>Long break (min)
+              <input type="number" id="longMin" min="1" max="120" step="1" />
+            </label>
+            <label>Long break every (focus sessions)
+              <input type="number" id="longEvery" min="2" max="12" step="1" />
+            </label>
+
+            <label>Background theme
+              <select id="theme">
+                <option value="aurora">Aurora</option>
+                <option value="ocean">Ocean</option>
+                <option value="sunset">Sunset</option>
+                <option value="mono">Mono</option>
+              </select>
+            </label>
+
+            <label>Custom background image URL (optional)
+              <input type="text" id="bgUrl" placeholder="https://example.com/bg.jpg" />
+            </label>
+
+            <label>Or upload image (saved locally)
+              <input type="file" id="bgFile" accept="image/*" />
+              <div class="hint">※ 画像はこのブラウザのローカル保存（localStorage）です。端末を跨いで同期はされません。</div>
+            </label>
+
+            <label>Sound
+              <select id="sound">
+                <option value="on">On</option>
+                <option value="off">Off</option>
+              </select>
+            </label>
+          </div>
+
+          <div style="display:flex; gap:10px; margin-top:10px; flex-wrap:wrap;">
+            <button class="btn primary" id="apply">Apply</button>
+            <button class="btn" id="clearBg">Clear custom background</button>
+          </div>
+
+          <div class="hint" style="margin-top:10px;">
+            Notion埋め込みでは、ページが非アクティブになるとタイマーが止まる/遅れる場合があります（Notion側の挙動）。
+            重要な計測用途ではブラウザ単体での利用もおすすめです。
+          </div>
+        </div>
+
+        <div class="footer">
+          Self-host this page and embed its URL in Notion via <code>/embed</code>.
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+
+  const bg = $("bg");
+  const timeEl = $("time");
+  const subtitleEl = $("subtitle");
+  const barEl = $("bar");
+
+  const startPauseBtn = $("startPause");
+  const skipBtn = $("skip");
+  const resetBtn = $("reset");
+  const toggleSettingsBtn = $("toggleSettings");
+  const drawer = $("drawer");
+
+  const focusMinEl = $("focusMin");
+  const shortMinEl = $("shortMin");
+  const longMinEl  = $("longMin");
+  const longEveryEl = $("longEvery");
+  const longEveryLabel = $("longEveryLabel");
+
+  const themeEl = $("theme");
+  const bgUrlEl = $("bgUrl");
+  const bgFileEl = $("bgFile");
+  const soundEl = $("sound");
+  const soundLabel = $("soundLabel");
+
+  const applyBtn = $("apply");
+  const clearBgBtn = $("clearBg");
+
+  const pills = Array.from(document.querySelectorAll(".pill"));
+
+  const STORAGE_KEY = "notion_pomo_widget_v1";
+
+  const themes = {
+    aurora: [
+      "radial-gradient(1200px 700px at 20% 15%, rgba(255,255,255,.12), transparent 60%)",
+      "radial-gradient(900px 600px at 80% 25%, rgba(255,255,255,.10), transparent 55%)",
+      "linear-gradient(135deg, #2b1055, #0b5b6b)"
+    ].join(","),
+    ocean: [
+      "radial-gradient(900px 600px at 30% 20%, rgba(255,255,255,.10), transparent 55%)",
+      "radial-gradient(900px 700px at 80% 55%, rgba(255,255,255,.08), transparent 60%)",
+      "linear-gradient(135deg, #032b43, #0a9396)"
+    ].join(","),
+    sunset: [
+      "radial-gradient(900px 650px at 25% 20%, rgba(255,255,255,.11), transparent 55%)",
+      "radial-gradient(850px 600px at 75% 30%, rgba(255,255,255,.08), transparent 60%)",
+      "linear-gradient(135deg, #3a1c71, #d76d77, #ffaf7b)"
+    ].join(","),
+    mono: [
+      "radial-gradient(900px 650px at 25% 20%, rgba(255,255,255,.10), transparent 55%)",
+      "radial-gradient(850px 600px at 75% 30%, rgba(255,255,255,.08), transparent 60%)",
+      "linear-gradient(135deg, #222, #111)"
+    ].join(","),
+  };
+
+  const defaultState = {
+    durations: { focus: 25*60, short: 5*60, long: 15*60 },
+    longEvery: 4,
+    mode: "focus",
+    running: false,
+    // countdown
+    remaining: 25*60,
+    // bookkeeping
+    focusCount: 0,
+    // bg
+    theme: "aurora",
+    customBgUrl: "",
+    customBgDataUrl: "",
+    sound: "on",
+  };
+
+  let state = loadState();
+  let timerId = null;
+  let lastTick = null;
+  let totalForMode = state.durations[state.mode];
+
+  function clamp(n, min, max){ return Math.max(min, Math.min(max, n)); }
+
+  function loadState(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw) return structuredClone(defaultState);
+      const parsed = JSON.parse(raw);
+      // merge
+      const s = structuredClone(defaultState);
+      Object.assign(s, parsed);
+      s.durations = Object.assign({}, defaultState.durations, parsed.durations || {});
+      // safety
+      s.longEvery = clamp(Number(s.longEvery)||4, 2, 12);
+      ["focus","short","long"].forEach(m=>{
+        s.durations[m] = clamp(Number(s.durations[m])||defaultState.durations[m], 60, 180*60);
+      });
+      if(!["focus","short","long"].includes(s.mode)) s.mode = "focus";
+      s.remaining = clamp(Number(s.remaining)||s.durations[s.mode], 0, 999*60);
+      if(!["aurora","ocean","sunset","mono"].includes(s.theme)) s.theme = "aurora";
+      if(!["on","off"].includes(s.sound)) s.sound = "on";
+      s.focusCount = clamp(Number(s.focusCount)||0, 0, 9999);
+      s.running = Boolean(s.running);
+      return s;
+    } catch {
+      return structuredClone(defaultState);
+    }
+  }
+
+  function saveState(){
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }
+
+  function formatTime(sec){
+    sec = Math.max(0, Math.floor(sec));
+    const m = Math.floor(sec/60);
+    const s = sec%60;
+    return String(m).padStart(2,"0")+":"+String(s).padStart(2,"0");
+  }
+
+  function setActivePill(mode){
+    pills.forEach(p=>p.classList.toggle("active", p.dataset.mode === mode));
+  }
+
+  function applyBackground(){
+    // theme base
+    bg.style.backgroundImage = themes[state.theme];
+
+    // custom bg has priority
+    const url = (state.customBgUrl||"").trim();
+    const dataUrl = (state.customBgDataUrl||"").trim();
+
+    if(dataUrl){
+      bg.style.backgroundImage = `linear-gradient(rgba(0,0,0,.28), rgba(0,0,0,.28)), url("${dataUrl}")`;
+      bg.style.backgroundSize = "cover";
+      bg.style.backgroundPosition = "center";
+      return;
+    }
+    if(url){
+      bg.style.backgroundImage = `linear-gradient(rgba(0,0,0,.28), rgba(0,0,0,.28)), url("${url}")`;
+      bg.style.backgroundSize = "cover";
+      bg.style.backgroundPosition = "center";
+      return;
+    }
+    // else keep theme gradients
+  }
+
+  function render(){
+    setActivePill(state.mode);
+    timeEl.textContent = formatTime(state.remaining);
+    totalForMode = state.durations[state.mode];
+    const pct = totalForMode ? (1 - state.remaining/totalForMode) : 0;
+    barEl.style.width = (clamp(pct, 0, 1)*100).toFixed(2)+"%";
+
+    // labels
+    const session = state.focusCount + (state.mode === "focus" ? 1 : 0);
+    subtitleEl.textContent = `Session ${Math.max(1, session)} · ${capitalize(state.mode)}`;
+    startPauseBtn.textContent = state.running ? "Pause" : "Start";
+
+    focusMinEl.value = Math.round(state.durations.focus/60);
+    shortMinEl.value = Math.round(state.durations.short/60);
+    longMinEl.value  = Math.round(state.durations.long/60);
+    longEveryEl.value = state.longEvery;
+    longEveryLabel.textContent = `every ${state.longEvery} focus`;
+
+    themeEl.value = state.theme;
+    bgUrlEl.value = state.customBgUrl || "";
+    soundEl.value = state.sound;
+    soundLabel.textContent = state.sound === "on" ? "On" : "Off";
+
+    applyBackground();
+  }
+
+  function capitalize(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
+
+  function beep(){
+    if(state.sound !== "on") return;
+    try{
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = "sine";
+      o.frequency.value = 880;
+      g.gain.value = 0.0001;
+      o.connect(g);
+      g.connect(ctx.destination);
+      o.start();
+      g.gain.exponentialRampToValueAtTime(0.15, ctx.currentTime + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.25);
+      o.stop(ctx.currentTime + 0.26);
+      o.onended = () => ctx.close();
+    } catch {}
+  }
+
+  function switchMode(newMode, resetRemaining=true){
+    state.mode = newMode;
+    if(resetRemaining){
+      state.remaining = state.durations[newMode];
+    } else {
+      state.remaining = clamp(state.remaining, 0, state.durations[newMode]);
+    }
+    saveState();
+    render();
+  }
+
+  function nextMode(){
+    // when a mode ends:
+    if(state.mode === "focus"){
+      state.focusCount += 1;
+      const shouldLong = (state.focusCount % state.longEvery === 0);
+      switchMode(shouldLong ? "long" : "short", true);
+    } else {
+      switchMode("focus", true);
+    }
+  }
+
+  function tick(now){
+    if(!state.running) return;
+    if(lastTick == null) lastTick = now;
+
+    // compute elapsed (ms)
+    const elapsed = now - lastTick;
+    if(elapsed >= 250){
+      const dec = Math.floor(elapsed/1000);
+      if(dec > 0){
+        state.remaining = Math.max(0, state.remaining - dec);
+        lastTick += dec*1000;
+        render();
+        saveState();
+        if(state.remaining <= 0){
+          beep();
+          state.running = false;
+          saveState();
+          render();
+          nextMode();
+          // auto-start next? (off by default)
+          // state.running = true; lastTick=null; startTimer();
+        }
+      }
+    }
+    timerId = requestAnimationFrame(tick);
+  }
+
+  function startTimer(){
+    if(state.running) return;
+    state.running = true;
+    lastTick = performance.now();
+    saveState();
+    render();
+    timerId = requestAnimationFrame(tick);
+  }
+
+  function pauseTimer(){
+    state.running = false;
+    lastTick = null;
+    saveState();
+    render();
+    if(timerId){
+      cancelAnimationFrame(timerId);
+      timerId = null;
+    }
+  }
+
+  function resetTimer(){
+    pauseTimer();
+    state.remaining = state.durations[state.mode];
+    saveState();
+    render();
+  }
+
+  function skip(){
+    pauseTimer();
+    state.remaining = 0;
+    saveState();
+    render();
+    beep();
+    nextMode();
+  }
+
+  // Events
+  pills.forEach(p => p.addEventListener("click", () => {
+    const m = p.dataset.mode;
+    pauseTimer();
+    switchMode(m, true);
+  }));
+
+  startPauseBtn.addEventListener("click", () => {
+    state.running ? pauseTimer() : startTimer();
+  });
+
+  resetBtn.addEventListener("click", resetTimer);
+  skipBtn.addEventListener("click", skip);
+
+  toggleSettingsBtn.addEventListener("click", () => {
+    drawer.classList.toggle("open");
+  });
+
+  applyBtn.addEventListener("click", () => {
+    // durations
+    const f = clamp(Number(focusMinEl.value)||25, 1, 180) * 60;
+    const s = clamp(Number(shortMinEl.value)||5, 1, 60) * 60;
+    const l = clamp(Number(longMinEl.value)||15, 1, 120) * 60;
+    state.durations.focus = f;
+    state.durations.short = s;
+    state.durations.long  = l;
+
+    state.longEvery = clamp(Number(longEveryEl.value)||4, 2, 12);
+    state.theme = themeEl.value;
+
+    state.customBgUrl = (bgUrlEl.value || "").trim();
+    // if user sets url, prefer it over dataUrl
+    if(state.customBgUrl) state.customBgDataUrl = "";
+
+    state.sound = soundEl.value;
+
+    // reset current remaining to current mode duration if it exceeds new duration
+    state.remaining = clamp(state.remaining, 0, state.durations[state.mode]);
+
+    saveState();
+    render();
+  });
+
+  clearBgBtn.addEventListener("click", () => {
+    state.customBgUrl = "";
+    state.customBgDataUrl = "";
+    bgUrlEl.value = "";
+    bgFileEl.value = "";
+    saveState();
+    render();
+  });
+
+  bgFileEl.addEventListener("change", async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if(!file) return;
+    // Read as data URL
+    const reader = new FileReader();
+    reader.onload = () => {
+      state.customBgDataUrl = String(reader.result || "");
+      state.customBgUrl = "";
+      saveState();
+      render();
+    };
+    reader.readAsDataURL(file);
+  });
+
+  // When tab becomes hidden, some environments pause timers. We keep state; on focus, render.
+  document.addEventListener("visibilitychange", () => {
+    if(document.visibilityState === "visible"){
+      render();
+    }
+  });
+
+  // init
+  render();
+})();
+</script>
+</body>
+</html>
