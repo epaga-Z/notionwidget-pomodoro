@@ -3,23 +3,24 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Notion Pomodoro Widget</title>
+  <title>Notion Pomodoro Widget (Responsive)</title>
   <style>
     :root{
-      --fg: #ffffff;
-      --muted: rgba(255,255,255,.75);
-      --card: rgba(0,0,0,.30);
-      --card2: rgba(0,0,0,.18);
-      --shadow: 0 16px 50px rgba(0,0,0,.35);
-      --radius: 18px;
-      --ring: rgba(255,255,255,.18);
+      --fg:#fff;
+      --muted: rgba(255,255,255,.78);
+      --ring: rgba(255,255,255,.22);
+      --btn: rgba(255,255,255,.14);
+      --btn2: rgba(255,255,255,.22);
+      --danger: rgba(255,80,80,.22);
+      --shadowText: 0 2px 14px rgba(0,0,0,.55);
     }
+
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
       margin:0;
       color:var(--fg);
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Hiragino Sans", "Noto Sans JP", "Helvetica Neue", Arial, "Apple Color Emoji","Segoe UI Emoji";
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Hiragino Sans", "Noto Sans JP", "Helvetica Neue", Arial;
       display:flex;
       align-items:center;
       justify-content:center;
@@ -27,107 +28,118 @@
       background:#111;
     }
 
-    /* Background layer */
+    /* Background (no glass blur overlay) */
     .bg{
       position:fixed; inset:0;
-      background: radial-gradient(1200px 700px at 20% 15%, rgba(255,255,255,.12), transparent 60%),
-                  radial-gradient(900px 600px at 80% 25%, rgba(255,255,255,.10), transparent 55%),
-                  linear-gradient(135deg, #2b1055, #0b5b6b);
       background-size: cover;
       background-position:center;
-      filter:saturate(1.05);
       transform:scale(1.02);
+      filter:saturate(1.05);
     }
+    /* readability vignette (no blur) */
     .bg::after{
       content:"";
-      position:absolute; inset:-20px;
-      background: rgba(0,0,0,.18);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
+      position:absolute; inset:0;
+      background:
+        radial-gradient(900px 520px at 50% 30%, rgba(0,0,0,.20), rgba(0,0,0,.55) 70%),
+        linear-gradient(180deg, rgba(0,0,0,.15), rgba(0,0,0,.35));
+      pointer-events:none;
     }
 
+    /* Container */
     .wrap{
-      width:min(420px, 92vw);
-      padding:18px;
+      width: min(720px, 96vw);
+      height: min(520px, 92vh);
+      padding: clamp(14px, 2.2vw, 22px);
       position:relative;
       z-index:1;
+      display:flex;
+      align-items:center;
+      justify-content:center;
     }
 
-    .card{
-      background: var(--card);
-      border: 1px solid var(--ring);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      overflow:hidden;
-    }
-    .card-inner{
-      padding:18px;
+    /* Main UI: no card background, just layout */
+    .ui{
+      width: min(560px, 100%);
       display:flex;
       flex-direction:column;
-      gap:14px;
-      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,0));
+      gap: clamp(10px, 1.6vh, 16px);
+      text-shadow: var(--shadowText);
     }
 
     .top{
-      display:flex; align-items:center; justify-content:space-between;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
       gap:12px;
+      flex-wrap:wrap;
     }
+
     .mode{
-      display:flex; gap:8px; flex-wrap:wrap;
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
     }
+
     .pill{
       border:1px solid var(--ring);
-      background: rgba(255,255,255,.08);
+      background: rgba(0,0,0,.10);
       color:var(--fg);
-      padding:8px 10px;
+      padding:10px 12px;
       border-radius:999px;
       font-size:12px;
       cursor:pointer;
       user-select:none;
-      transition:transform .08s ease, background .15s ease;
       line-height:1;
+      transition:transform .08s ease, background .15s ease;
+      text-shadow: var(--shadowText);
     }
     .pill:active{transform:scale(.98)}
-    .pill.active{background: rgba(255,255,255,.18)}
+    .pill.active{background: rgba(255,255,255,.16)}
+
     .gear{
       border:1px solid var(--ring);
-      background: rgba(255,255,255,.08);
+      background: rgba(0,0,0,.10);
       color:var(--fg);
-      padding:8px 10px;
-      border-radius:12px;
+      padding:10px 12px;
+      border-radius: 14px;
       cursor:pointer;
       user-select:none;
-      display:flex; align-items:center; gap:8px;
+      display:flex;
+      align-items:center;
+      gap:8px;
       font-size:12px;
+      text-shadow: var(--shadowText);
     }
 
     .time{
       text-align:center;
       font-variant-numeric: tabular-nums;
-      font-weight: 700;
+      font-weight: 800;
       letter-spacing: .02em;
-      font-size: 66px;
+      font-size: clamp(44px, 10vw, 92px);
       line-height: 1;
-      padding: 6px 0 0;
+      margin-top: 2px;
     }
     .sub{
       text-align:center;
       color: var(--muted);
-      font-size: 12px;
-      margin-top:-6px;
+      font-size: clamp(12px, 2.5vw, 14px);
+      margin-top: -6px;
     }
 
     .progress{
-      height:10px;
-      border-radius:999px;
-      background: rgba(255,255,255,.12);
-      border:1px solid rgba(255,255,255,.16);
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.14);
+      border: 1px solid rgba(255,255,255,.18);
       overflow:hidden;
+      box-shadow: 0 8px 24px rgba(0,0,0,.25);
     }
     .bar{
       height:100%;
       width:0%;
-      background: rgba(255,255,255,.70);
+      background: rgba(255,255,255,.82);
       border-right: 1px solid rgba(255,255,255,.35);
       transition: width .25s linear;
     }
@@ -136,171 +148,247 @@
       display:flex;
       gap:10px;
       justify-content:center;
-      margin-top:4px;
       flex-wrap:wrap;
     }
     .btn{
-      min-width:110px;
-      border-radius: 14px;
+      min-width: 110px;
+      border-radius: 16px;
       border:1px solid var(--ring);
-      background: rgba(255,255,255,.10);
+      background: var(--btn);
       color:var(--fg);
-      padding:10px 12px;
+      padding: 12px 14px;
       cursor:pointer;
       user-select:none;
-      font-weight:600;
+      font-weight: 650;
       transition:transform .08s ease, background .15s ease;
+      text-shadow: var(--shadowText);
     }
     .btn:active{transform:scale(.98)}
-    .btn.primary{background: rgba(255,255,255,.20)}
-    .btn.danger{background: rgba(255,80,80,.18)}
-    .row{
-      display:flex; justify-content:space-between; align-items:center;
-      gap:10px;
-      color:var(--muted);
-      font-size:12px;
+    .btn.primary{background: var(--btn2)}
+    .btn.danger{background: var(--danger)}
+
+    .meta{
+      display:flex;
+      justify-content:center;
     }
-    .row strong{color:var(--fg); font-weight:600}
     .mini{
-      background: rgba(0,0,0,.18);
-      border:1px solid rgba(255,255,255,.10);
-      padding:10px 12px;
-      border-radius: 14px;
-      display:flex; flex-direction:column; gap:8px;
+      width: min(520px, 100%);
+      display:flex;
+      gap:10px;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      border:1px solid rgba(255,255,255,.16);
+      background: rgba(0,0,0,.12);
+      border-radius: 16px;
+      padding: 10px 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.18);
+    }
+    .row{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      color: var(--muted);
+      font-size: 12px;
+      text-shadow: var(--shadowText);
+      white-space: nowrap;
+    }
+    .row strong{color:var(--fg); font-weight:650}
+
+    /* Settings overlay (scrollable) */
+    .overlay{
+      position:absolute;
+      inset: 0;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding: clamp(12px, 2vw, 18px);
+      z-index: 10;
+    }
+    .overlay.open{display:flex}
+
+    .overlay::before{
+      content:"";
+      position:absolute; inset:0;
+      background: rgba(0,0,0,.55);
     }
 
-    /* Settings drawer */
-    .drawer{
-      margin-top:12px;
-      display:none;
+    .panel{
+      position:relative;
+      width: min(640px, 100%);
+      max-height: min(78vh, 520px);
+      overflow:auto; /* ← ③スクロール可能 */
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(15,15,15,.92); /* ← ガラスではなくほぼソリッド */
+      box-shadow: 0 18px 60px rgba(0,0,0,.55);
+      padding: 14px;
+      text-shadow:none;
     }
-    .drawer.open{display:block}
+
+    .panel-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding: 4px 4px 10px;
+    }
+    .panel-title{
+      font-size: 14px;
+      font-weight: 750;
+      color: #fff;
+      letter-spacing:.02em;
+    }
+    .close{
+      border:1px solid rgba(255,255,255,.18);
+      background: rgba(255,255,255,.10);
+      color:#fff;
+      border-radius: 12px;
+      padding: 9px 12px;
+      cursor:pointer;
+      font-weight:650;
+    }
+
     .grid{
       display:grid;
       grid-template-columns: 1fr 1fr;
       gap:10px;
     }
     label{
-      display:flex; flex-direction:column; gap:6px;
+      display:flex;
+      flex-direction:column;
+      gap:6px;
       font-size:12px;
-      color: var(--muted);
+      color: rgba(255,255,255,.78);
     }
     input[type="number"], input[type="text"], select{
       width:100%;
-      padding:10px 10px;
+      padding: 10px 10px;
       border-radius: 12px;
       border:1px solid rgba(255,255,255,.18);
       background: rgba(255,255,255,.08);
-      color: var(--fg);
+      color:#fff;
       outline:none;
     }
     input[type="file"]{
-      color:var(--muted);
+      color: rgba(255,255,255,.78);
       font-size:12px;
     }
+
+    .panel-actions{
+      display:flex;
+      gap:10px;
+      margin-top:12px;
+      flex-wrap:wrap;
+    }
+
     .hint{
-      font-size:11px;
-      color: rgba(255,255,255,.70);
-      line-height:1.35;
+      margin-top: 10px;
+      font-size: 11px;
+      color: rgba(255,255,255,.72);
+      line-height:1.45;
     }
-    .footer{
-      text-align:center;
-      font-size:11px;
-      color: rgba(255,255,255,.55);
-      padding: 10px 0 2px;
+
+    /* Responsive tweaks */
+    @media (max-width: 520px){
+      .wrap{height: min(560px, 92vh);}
+      .grid{grid-template-columns: 1fr;} /* ← ①小画面は1列 */
+      .btn{min-width: 96px; width: calc(50% - 5px);}
+      .gear{width:100%; justify-content:center;}
+      .mode{width:100%; justify-content:center;}
     }
-    a{color:rgba(255,255,255,.85)}
   </style>
 </head>
 <body>
   <div class="bg" id="bg"></div>
 
-  <div class="wrap">
-    <div class="card">
-      <div class="card-inner">
-        <div class="top">
-          <div class="mode">
-            <div class="pill active" data-mode="focus">Focus</div>
-            <div class="pill" data-mode="short">Short</div>
-            <div class="pill" data-mode="long">Long</div>
-          </div>
-          <button class="gear" id="toggleSettings" title="設定">
-            ⚙︎ Settings
-          </button>
+  <div class="wrap" id="wrap">
+    <div class="ui" aria-label="pomodoro">
+      <div class="top">
+        <div class="mode">
+          <div class="pill active" data-mode="focus">Focus</div>
+          <div class="pill" data-mode="short">Short</div>
+          <div class="pill" data-mode="long">Long</div>
         </div>
+        <button class="gear" id="openSettings" title="設定">⚙︎ Settings</button>
+      </div>
 
-        <div class="time" id="time">25:00</div>
-        <div class="sub" id="subtitle">Session 1 · Focus</div>
+      <div class="time" id="time">25:00</div>
+      <div class="sub" id="subtitle">Session 1 · Focus</div>
 
-        <div class="progress" aria-label="progress">
-          <div class="bar" id="bar"></div>
-        </div>
+      <div class="progress" aria-label="progress">
+        <div class="bar" id="bar"></div>
+      </div>
 
-        <div class="controls">
-          <button class="btn primary" id="startPause">Start</button>
-          <button class="btn" id="skip">Skip</button>
-          <button class="btn danger" id="reset">Reset</button>
-        </div>
+      <div class="controls">
+        <button class="btn primary" id="startPause">Start</button>
+        <button class="btn" id="skip">Skip</button>
+        <button class="btn danger" id="reset">Reset</button>
+      </div>
 
+      <div class="meta">
         <div class="mini">
           <div class="row"><span>Next long break</span><strong id="longEveryLabel">every 4 focus</strong></div>
           <div class="row"><span>Sound</span><strong id="soundLabel">On</strong></div>
         </div>
+      </div>
+    </div>
 
-        <div class="drawer" id="drawer">
-          <div class="grid">
-            <label>Focus (min)
-              <input type="number" id="focusMin" min="1" max="180" step="1" />
-            </label>
-            <label>Short break (min)
-              <input type="number" id="shortMin" min="1" max="60" step="1" />
-            </label>
-            <label>Long break (min)
-              <input type="number" id="longMin" min="1" max="120" step="1" />
-            </label>
-            <label>Long break every (focus sessions)
-              <input type="number" id="longEvery" min="2" max="12" step="1" />
-            </label>
-
-            <label>Background theme
-              <select id="theme">
-                <option value="aurora">Aurora</option>
-                <option value="ocean">Ocean</option>
-                <option value="sunset">Sunset</option>
-                <option value="mono">Mono</option>
-              </select>
-            </label>
-
-            <label>Custom background image URL (optional)
-              <input type="text" id="bgUrl" placeholder="https://example.com/bg.jpg" />
-            </label>
-
-            <label>Or upload image (saved locally)
-              <input type="file" id="bgFile" accept="image/*" />
-              <div class="hint">※ 画像はこのブラウザのローカル保存（localStorage）です。端末を跨いで同期はされません。</div>
-            </label>
-
-            <label>Sound
-              <select id="sound">
-                <option value="on">On</option>
-                <option value="off">Off</option>
-              </select>
-            </label>
-          </div>
-
-          <div style="display:flex; gap:10px; margin-top:10px; flex-wrap:wrap;">
-            <button class="btn primary" id="apply">Apply</button>
-            <button class="btn" id="clearBg">Clear custom background</button>
-          </div>
-
-          <div class="hint" style="margin-top:10px;">
-            Notion埋め込みでは、ページが非アクティブになるとタイマーが止まる/遅れる場合があります（Notion側の挙動）。
-            重要な計測用途ではブラウザ単体での利用もおすすめです。
-          </div>
+    <!-- Settings overlay -->
+    <div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-label="settings">
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title">Settings</div>
+          <button class="close" id="closeSettings">Close</button>
         </div>
 
-        <div class="footer">
-          Self-host this page and embed its URL in Notion via <code>/embed</code>.
+        <div class="grid">
+          <label>Focus (min)
+            <input type="number" id="focusMin" min="1" max="180" step="1" />
+          </label>
+          <label>Short break (min)
+            <input type="number" id="shortMin" min="1" max="60" step="1" />
+          </label>
+          <label>Long break (min)
+            <input type="number" id="longMin" min="1" max="120" step="1" />
+          </label>
+          <label>Long break every (focus sessions)
+            <input type="number" id="longEvery" min="2" max="12" step="1" />
+          </label>
+
+          <label>Background theme
+            <select id="theme">
+              <option value="aurora">Aurora</option>
+              <option value="ocean">Ocean</option>
+              <option value="sunset">Sunset</option>
+              <option value="mono">Mono</option>
+            </select>
+          </label>
+
+          <label>Custom background image URL (optional)
+            <input type="text" id="bgUrl" placeholder="https://example.com/bg.jpg" />
+          </label>
+
+          <label>Or upload image (saved locally)
+            <input type="file" id="bgFile" accept="image/*" />
+            <div class="hint">※ 画像はこのブラウザのローカル保存（localStorage）です。端末を跨いで同期はされません。</div>
+          </label>
+
+          <label>Sound
+            <select id="sound">
+              <option value="on">On</option>
+              <option value="off">Off</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="panel-actions">
+          <button class="btn primary" id="apply">Apply</button>
+          <button class="btn" id="clearBg">Clear custom background</button>
+        </div>
+
+        <div class="hint">
+          Notion埋め込みでは、ページが非アクティブになるとタイマーが止まる/遅れる場合があります（Notion/ブラウザ側の挙動）。
+          厳密な計測が必要ならブラウザ単体での利用もおすすめです。
         </div>
       </div>
     </div>
@@ -318,8 +406,10 @@
   const startPauseBtn = $("startPause");
   const skipBtn = $("skip");
   const resetBtn = $("reset");
-  const toggleSettingsBtn = $("toggleSettings");
-  const drawer = $("drawer");
+
+  const openSettingsBtn = $("openSettings");
+  const closeSettingsBtn = $("closeSettings");
+  const overlay = $("overlay");
 
   const focusMinEl = $("focusMin");
   const shortMinEl = $("shortMin");
@@ -338,7 +428,7 @@
 
   const pills = Array.from(document.querySelectorAll(".pill"));
 
-  const STORAGE_KEY = "notion_pomo_widget_v1";
+  const STORAGE_KEY = "notion_pomo_widget_v2";
 
   const themes = {
     aurora: [
@@ -368,11 +458,8 @@
     longEvery: 4,
     mode: "focus",
     running: false,
-    // countdown
     remaining: 25*60,
-    // bookkeeping
     focusCount: 0,
-    // bg
     theme: "aurora",
     customBgUrl: "",
     customBgDataUrl: "",
@@ -391,11 +478,9 @@
       const raw = localStorage.getItem(STORAGE_KEY);
       if(!raw) return structuredClone(defaultState);
       const parsed = JSON.parse(raw);
-      // merge
       const s = structuredClone(defaultState);
       Object.assign(s, parsed);
       s.durations = Object.assign({}, defaultState.durations, parsed.durations || {});
-      // safety
       s.longEvery = clamp(Number(s.longEvery)||4, 2, 12);
       ["focus","short","long"].forEach(m=>{
         s.durations[m] = clamp(Number(s.durations[m])||defaultState.durations[m], 60, 180*60);
@@ -428,21 +513,19 @@
   }
 
   function applyBackground(){
-    // theme base
     bg.style.backgroundImage = themes[state.theme];
 
-    // custom bg has priority
     const url = (state.customBgUrl||"").trim();
     const dataUrl = (state.customBgDataUrl||"").trim();
 
     if(dataUrl){
-      bg.style.backgroundImage = `linear-gradient(rgba(0,0,0,.28), rgba(0,0,0,.28)), url("${dataUrl}")`;
+      bg.style.backgroundImage = `url("${dataUrl}")`;
       bg.style.backgroundSize = "cover";
       bg.style.backgroundPosition = "center";
       return;
     }
     if(url){
-      bg.style.backgroundImage = `linear-gradient(rgba(0,0,0,.28), rgba(0,0,0,.28)), url("${url}")`;
+      bg.style.backgroundImage = `url("${url}")`;
       bg.style.backgroundSize = "cover";
       bg.style.backgroundPosition = "center";
       return;
@@ -457,15 +540,16 @@
     const pct = totalForMode ? (1 - state.remaining/totalForMode) : 0;
     barEl.style.width = (clamp(pct, 0, 1)*100).toFixed(2)+"%";
 
-    // labels
     const session = state.focusCount + (state.mode === "focus" ? 1 : 0);
     subtitleEl.textContent = `Session ${Math.max(1, session)} · ${capitalize(state.mode)}`;
+
     startPauseBtn.textContent = state.running ? "Pause" : "Start";
 
     focusMinEl.value = Math.round(state.durations.focus/60);
     shortMinEl.value = Math.round(state.durations.short/60);
     longMinEl.value  = Math.round(state.durations.long/60);
     longEveryEl.value = state.longEvery;
+
     longEveryLabel.textContent = `every ${state.longEvery} focus`;
 
     themeEl.value = state.theme;
@@ -499,17 +583,12 @@
 
   function switchMode(newMode, resetRemaining=true){
     state.mode = newMode;
-    if(resetRemaining){
-      state.remaining = state.durations[newMode];
-    } else {
-      state.remaining = clamp(state.remaining, 0, state.durations[newMode]);
-    }
+    state.remaining = resetRemaining ? state.durations[newMode] : clamp(state.remaining, 0, state.durations[newMode]);
     saveState();
     render();
   }
 
   function nextMode(){
-    // when a mode ends:
     if(state.mode === "focus"){
       state.focusCount += 1;
       const shouldLong = (state.focusCount % state.longEvery === 0);
@@ -523,7 +602,6 @@
     if(!state.running) return;
     if(lastTick == null) lastTick = now;
 
-    // compute elapsed (ms)
     const elapsed = now - lastTick;
     if(elapsed >= 250){
       const dec = Math.floor(elapsed/1000);
@@ -538,8 +616,6 @@
           saveState();
           render();
           nextMode();
-          // auto-start next? (off by default)
-          // state.running = true; lastTick=null; startTimer();
         }
       }
     }
@@ -582,6 +658,17 @@
     nextMode();
   }
 
+  function openSettings(){
+    overlay.classList.add("open");
+    // scroll to top each time (optional)
+    const panel = overlay.querySelector(".panel");
+    if(panel) panel.scrollTop = 0;
+  }
+
+  function closeSettings(){
+    overlay.classList.remove("open");
+  }
+
   // Events
   pills.forEach(p => p.addEventListener("click", () => {
     const m = p.dataset.mode;
@@ -596,12 +683,20 @@
   resetBtn.addEventListener("click", resetTimer);
   skipBtn.addEventListener("click", skip);
 
-  toggleSettingsBtn.addEventListener("click", () => {
-    drawer.classList.toggle("open");
+  openSettingsBtn.addEventListener("click", openSettings);
+  closeSettingsBtn.addEventListener("click", closeSettings);
+
+  // click outside panel to close
+  overlay.addEventListener("click", (e) => {
+    if(e.target === overlay) closeSettings();
+  });
+
+  // ESC to close
+  window.addEventListener("keydown", (e) => {
+    if(e.key === "Escape" && overlay.classList.contains("open")) closeSettings();
   });
 
   applyBtn.addEventListener("click", () => {
-    // durations
     const f = clamp(Number(focusMinEl.value)||25, 1, 180) * 60;
     const s = clamp(Number(shortMinEl.value)||5, 1, 60) * 60;
     const l = clamp(Number(longMinEl.value)||15, 1, 120) * 60;
@@ -613,12 +708,10 @@
     state.theme = themeEl.value;
 
     state.customBgUrl = (bgUrlEl.value || "").trim();
-    // if user sets url, prefer it over dataUrl
     if(state.customBgUrl) state.customBgDataUrl = "";
 
     state.sound = soundEl.value;
 
-    // reset current remaining to current mode duration if it exceeds new duration
     state.remaining = clamp(state.remaining, 0, state.durations[state.mode]);
 
     saveState();
@@ -634,10 +727,9 @@
     render();
   });
 
-  bgFileEl.addEventListener("change", async (e) => {
+  bgFileEl.addEventListener("change", (e) => {
     const file = e.target.files && e.target.files[0];
     if(!file) return;
-    // Read as data URL
     const reader = new FileReader();
     reader.onload = () => {
       state.customBgDataUrl = String(reader.result || "");
@@ -648,14 +740,12 @@
     reader.readAsDataURL(file);
   });
 
-  // When tab becomes hidden, some environments pause timers. We keep state; on focus, render.
   document.addEventListener("visibilitychange", () => {
     if(document.visibilityState === "visible"){
       render();
     }
   });
 
-  // init
   render();
 })();
 </script>
