@@ -9,13 +9,10 @@
       --fg:#fff;
       --muted: rgba(255,255,255,.82);
 
-      /* button look (flocus-like) */
-      --stroke: rgba(255,255,255,.90);
-      --strokeSoft: rgba(255,255,255,.65);
+      --stroke: rgba(255,255,255,.92);
+      --strokeSoft: rgba(255,255,255,.62);
 
       --shadowText: 0 2px 16px rgba(0,0,0,.55);
-      --dangerStroke: rgba(255,170,170,.92);
-      --dangerFill: rgba(255,255,255,.96);
     }
 
     *{box-sizing:border-box}
@@ -23,8 +20,8 @@
     body{
       margin:0;
       color:var(--fg);
-      /* Font stack: system UI (see below in answer) */
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Hiragino Sans", "Noto Sans JP", "Helvetica Neue", Arial;
+      /* macOS/iOS向けに絞ったフォントスタック */
+      font-family: -apple-system, system-ui, "Hiragino Sans", "Noto Sans JP", sans-serif;
       display:flex;
       align-items:center;
       justify-content:center;
@@ -51,7 +48,7 @@
 
     .wrap{
       width: min(760px, 96vw);
-      height: min(560px, 92vh);
+      height: min(640px, 92vh);
       padding: clamp(14px, 2.2vw, 22px);
       position:relative;
       z-index:1;
@@ -78,7 +75,7 @@
       flex-wrap:wrap;
     }
 
-    /* Base button: transparent + white stroke */
+    /* Base buttons: outline by default (transparent) */
     button{
       border: 1px solid var(--stroke);
       background: transparent;
@@ -86,7 +83,7 @@
       cursor:pointer;
       user-select:none;
       text-shadow: var(--shadowText);
-      transition: transform .08s ease, background .15s ease, color .15s ease, border-color .15s ease;
+      transition: transform .08s ease, background .15s ease, color .15s ease, border-color .15s ease, opacity .15s ease;
       -webkit-tap-highlight-color: transparent;
       line-height: 1;
     }
@@ -111,7 +108,6 @@
       font-size: 12px;
       border-color: var(--strokeSoft);
     }
-    /* Selected mode: white fill */
     .mode-btn.active{
       background: rgba(255,255,255,.96);
       color:#111;
@@ -130,21 +126,25 @@
       white-space: nowrap;
     }
 
-    /* Big timer */
+    /* Big timer - slightly thinner */
     .time{
       text-align:center;
       font-variant-numeric: tabular-nums;
-      font-weight: 860;
+      font-weight: 720; /* ← ③少し細く */
       letter-spacing: .02em;
       line-height: 1;
-      font-size: clamp(68px, 14.5vw, 140px);
-      margin-top: clamp(14px, 2.6vh, 22px);
+      font-size: clamp(72px, 15vw, 148px);
+      margin-top: clamp(14px, 2.8vh, 24px);
       margin-bottom: 0;
     }
 
-    /* Spacer between timer and controls: grows with viewport height */
+    /*
+      Spacer between timer and controls:
+      - "at least double" vs previous (was ~14-44px). Now 48-140px.
+      - grows with viewport height (vh) so vertical responsiveness works.
+    */
     .spacer{
-      height: clamp(14px, 4.2vh, 44px);
+      height: clamp(48px, 12vh, 140px); /* ← ②縦方向に効く＆距離を大幅に拡大 */
       width: 100%;
     }
 
@@ -160,16 +160,36 @@
       padding: 10px 14px;
       border-radius: 999px;
       font-size: 12px;
-      font-weight: 750;
+      font-weight: 800;
       min-width: 92px;
       border-color: var(--strokeSoft);
     }
-    /* Primary: default looks like outline, but hover/active becomes white automatically via button:hover */
-    .btn.primary{
-      border-color: var(--stroke);
+
+    /* ① Start/Pauseの見た目で状態が即わかるようにする */
+    .btn.start{
+      background: rgba(255,255,255,.96); /* 常に白背景 */
+      color:#111;
+      text-shadow:none;
+      border-color: rgba(255,255,255,.96);
+    }
+    .btn.start:hover{
+      background: rgba(255,255,255,1);
+      border-color: rgba(255,255,255,1);
     }
 
-    /* Reset: slightly softer outline; hover becomes white anyway */
+    .btn.pause{
+      background: rgba(0,0,0,.40); /* 黒背景（うっすら） */
+      color:#fff;
+      text-shadow: var(--shadowText);
+      border-color: rgba(255,255,255,.92);
+    }
+    .btn.pause:hover{
+      background: rgba(0,0,0,.55);
+      color:#fff;
+      text-shadow: var(--shadowText);
+      border-color: rgba(255,255,255,.96);
+    }
+
     .btn.reset{
       border-color: var(--strokeSoft);
     }
@@ -285,8 +305,6 @@
       margin-top:12px;
       flex-wrap:wrap;
     }
-
-    /* Action buttons inside panel: match outline/filled hover */
     .panel-actions button{
       padding: 10px 14px;
       border-radius: 999px;
@@ -303,12 +321,12 @@
     }
 
     @media (max-width: 520px){
-      .wrap{height: min(640px, 92vh);}
       .grid{grid-template-columns: 1fr;}
       .gear{width:100%; justify-content:center;}
       .modes{width:100%; justify-content:center;}
       .btn{min-width: 84px; padding: 10px 12px;}
-      .spacer{height: clamp(16px, 5vh, 54px);}
+      /* small screens: still keep a big vertical gap */
+      .spacer{height: clamp(52px, 12vh, 150px);}
     }
   </style>
 </head>
@@ -331,7 +349,7 @@
       <div class="spacer" aria-hidden="true"></div>
 
       <div class="controls">
-        <button class="btn primary" id="startPause" type="button">Start</button>
+        <button class="btn start" id="startPause" type="button">Start</button>
         <button class="btn reset" id="reset" type="button">Reset</button>
       </div>
 
@@ -433,7 +451,7 @@
 
   const modeButtons = Array.from(document.querySelectorAll(".mode-btn"));
 
-  const STORAGE_KEY = "notion_pomo_widget_v4";
+  const STORAGE_KEY = "notion_pomo_widget_v5";
 
   const themes = {
     aurora: [
@@ -536,6 +554,18 @@
     }
   }
 
+  function setStartPauseVisual(){
+    if(state.running){
+      startPauseBtn.textContent = "Pause";
+      startPauseBtn.classList.remove("start");
+      startPauseBtn.classList.add("pause");
+    } else {
+      startPauseBtn.textContent = "Start";
+      startPauseBtn.classList.remove("pause");
+      startPauseBtn.classList.add("start");
+    }
+  }
+
   function render(){
     setActiveMode(state.mode);
     timeEl.textContent = formatTime(state.remaining);
@@ -550,8 +580,7 @@
     soundEl.value = state.sound;
     soundLabel.textContent = state.sound === "on" ? "On" : "Off";
 
-    startPauseBtn.textContent = state.running ? "Pause" : "Start";
-
+    setStartPauseVisual();
     applyBackground();
   }
 
